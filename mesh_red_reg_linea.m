@@ -20,7 +20,7 @@ ne = mesh.ElementCount;
 nv = mesh.NodeCount;
 regidx = mesh.Region;
 regno = unique(regidx);
-blobel = find(regidx == regno(2));
+%blobel = find(regidx == regno(2));
 % assuming that there is surface that marks the inclusion
 
 % define source and detector locations
@@ -89,9 +89,9 @@ size (data)
 size (data_homog)
 ddiff= -data+data_homog;
 figure;
-plot(real(data));%, [-0.26,0.015]); axis equal tight;
+plot(real(ddiff));%, [-0.26,0.015]); axis equal tight;
  hold on
-plot(real(data_homog));
+plot(imag(ddiff));
 
 title('target data');
 
