@@ -11,16 +11,23 @@ data_homo= toastReadVector('Brest_homo.dat');
 data_LESION = toastReadVector('Brest_hetero.dat');
 size (data_homo)
 % size (data_LESION)
-%   plot(real (data_homo));
-%  hold on
-%  plot(real (data_LESION));
-%  hold on
+figure;
+   plot(real (data_homo));
+ hold on
+ plot( real(data_LESION));
+ xlabel('Detector index: S1 only then S2 only ');
+ylabel('Intensity');
+%legend('Difference between medium  with random parameter w/without lession',...
+legend( ' Intensity measurement for tissue without lession', ' Intensity measurement for tissue with lession');
+figure;
  plot(real (data_LESION- data_homo));
+ hold on
+ plot(imag (data_LESION- data_homo));
 
 xlabel('Detector index: S1 only then S2 only ');
 ylabel('Intensity');
 %legend('Difference between medium  with random parameter w/without lession',...
-legend( ' breast without lesion',  'breast with lesion','diff' ) %'1 LESION',
+legend( ' real  of the difference',  'imag of the difference','diff' ) %'1 LESION',
 %axis equal tight;
 
 

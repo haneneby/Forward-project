@@ -10,8 +10,8 @@ close all
 refind = 1.4;   % refractive index
 c0 = 0.3;       % speed of light in vacuum [mm/ps]
 cm = c0/refind; % speed of light in the medium [mm/ps]
-mua_bkg = 0.002; % background absorption [1/mm]
-mus_bkg = 2.3;    % background scattering [1/mm];
+mua_bkg = 0.0033 ; % background absorption [1/mm]
+mus_bkg = 1.06;    % background scattering [1/mm];
 itrmax = 100;   % CG iteration limit
 a= 0.002;       % absorption coef of medium index range lower limit
 b= 0.012;       % absorption coef of medium index range upper limit
@@ -28,20 +28,15 @@ regidx = mesh.Region;
 regno = unique(regidx);
 ref = ones(ne,1)*refind;
 
-
-% load mesh in toast format
-    %mesh.Write('breast_mod.msh');
-    %mesh = toastMesh('breast_mod.msh');
-
 %  % % assign canstant elementwise optical coefficients - mus perturbation
-
 mua = ones(ne,1)*mua_bkg;
 mus = ones(ne,1)*mus_bkg;
 
-% % assign random mu perturbation
-% mua = (b-a).*rand(ne,1)+a;
-% mus = (b1-a1).*rand(ne,1)+a1;
-
+% assign random mu perturbation
+mua = (b-a).*rand(ne,1)+a;
+mus = (b1-a1).*rand(ne,1)+a1;
+mua_ref=mua;
+mus_ref=mus;
 % assign linear mu perturbation
 %[mua, mus] =linearparam(ne,mua_bkg,mus_bkg);
 
@@ -50,11 +45,9 @@ for i=2:size(regno)
 blobs = find(regidx == regno(i)); % assuming that there is surface that marks the inclusion
 %indx=cat(2,indx,blobs');
 mua(blobs) =0.17; %(b-a).* rand(1) +a%2.*mua_bkg;%(b-a).* rand(1) +a*2;
-mus(blobs) =5;%(b1-a1).* rand(1) +a1%2.*mus_bkg;
+mus(blobs) =1.5;%(b1-a1).* rand(1) +a1%2.*mus_bkg;
 end
 
-% idx = logical(mua); %locations to keep
-% mua(~idx)=mua_bkg;
 mesh.Display
 k=0;
 figure; mesh.Display(mua);%,'range',[0.001,1]);
@@ -64,8 +57,6 @@ figure; mesh.Display(mua);%,'range',[0.001,1]);
 % filename = sprintf('meshabsorption%d', k);
 %saveas(gcf,filename,'png')
 figure; mesh.Display(mus);%,'range',[0.6,1.7]);
-%mesh.Write('breast_mod.msh');
-
 
 % define source and detector locations
 mm=1;
@@ -94,8 +85,8 @@ di= di+dis;
 
 end
 
-for i=1:2
-mesh.SetQM(Q(i,:),M);
+for yy=1:2
+mesh.SetQM(Q(yy,:),M);
 % mesh.SetQM(Q,M);
 hold on
 plot(Q(:,1),Q(:,2),'ro','MarkerFaceColor','r');
@@ -111,9 +102,19 @@ size(mus);
 % Solve the FEM linear system
 K = dotSysmat (mesh,mua,mus,ref,freq,'EL');
 Phi = K\qvec;
-Y(:,i) = mvec.' * Phi;
+Y(:,yy) = mvec.' * Phi;
 Y;
+% for reference, also solve the homogeneous problem
+mus = mus_ref;%ones(ne,1)*mus_bkg;
+mua =mua_ref;% ones(ne,1)*mua_bkg;
+smat = dotSysmat(mesh, mua, mus, ref,freq, 'EL');
+data_homog (:,yy)= (mvec.' * (smat\qvec));
 end
+toastWriteVector('Brest_homo.dat', data_homog);
+toastWriteVector('Brest_hetero.dat', Y);
+ddiff= Y-data_homog;
+figure;
+plot(real(ddiff));
 MESVEC= sum(Y,2);
 
 logY = log(MESVEC);
@@ -138,7 +139,7 @@ colorbar
 
 % Write solver results to file
 data = reshape(log(abs(Y')),[],1);
-toastWriteVector('Brest_homo_690_0.17_5_ref1.4.dat', Y);%shape1_LESION_hom_far
+%toastWriteVector('Brest_homo_1.dat', Y);%shape1_LESION_hom_far
 
 
 % Display boundary profile
@@ -146,9 +147,9 @@ figure
 subplot(1,2,1); 
 % title(' Amplitude');
 % xlabel('Detector index q');
-plot (real(Y(:,1)));
+plot (real(data_homog(:,1)));
 hold on
-plot (real(Y(:,2)));
+plot (real(data_homog(:,2)));
 title(' Amplitude');
 xlabel('Detector index q');
 
@@ -156,33 +157,14 @@ ylabel('Intensity');
 legend('s1','s2')
 
 subplot(1,2,2); 
-plot (imag(Y(:,1)));
+plot (imag(data_homog(:,1)));
 hold on
-plot (imag(Y(:,2)));
+plot (imag(data_homog(:,2)));
 ylabel('Intensity');
 title(' Phase');
 xlabel('Detector index q');
 legend('s1','s2')
 
-% display the measurements as as a boundary profile as a function of source detector separation:
-
-% figure
-% hold on
-% angle = [360/32:360/128:360]
-% size(angle)
-% size(Y(:,1));
-% size(Y(:,2))
-%   for i=1:size(Y,2)
-%   ywrap = [Y(i:end,i), Y(1:i-1,i)];
-%   size (ywrap)
-%   plot(angle,log(ywrap),'o-');
-% end
-% 
-% axis([0 360 -13 -2]);
-% xlabel('angular source-detector separation');
-% ylabel('log intensity');
-% 
-% 
 % %%%%%%% function%%%%%%%
 function [f, p]= linearparam(ne,mua_bkg,mus_bkg)
 vecta= ones(ne,1); 

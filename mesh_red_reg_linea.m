@@ -4,26 +4,30 @@ close all
 clear all
 
 % some parameters
-refind = 1;   % refractive index
+refind = 1.4;   % refractive index
 c0 = 0.3;       % speed of light in vacuum [mm/ps]
 cm = c0/refind; % speed of light in the medium [mm/ps]
-mua_bkg = 0.002; % background absorption [1/mm]
+mua_bkg = 0.0033; % background absorption [1/mm]
 mus_bkg = 1.06;    % background scattering [1/mm];
 rad = 25;       % mesh radius [mm]
 itrmax = 100;   % CG iteration limit
 tolCG = 1e-6;   % convergence criterion
 w= .00069;        % wave length
+a= 0.002;       % absorption coef of medium index range lower limit
+b= 0.012;       % absorption coef of medium index range upper limit
+a1= 0.6 ;      % scattering coef of medium index range lower limit
+b1= 1.05;      % scattering coef of medium index range uapper limit
+tol = 1e-6     % tolerance of bicgstab where the default is  1e-6.
+maxit= 20      % max number of iteration, default is min (n,20) where n is the size of vector b in bicgstab(A,b)
 f = cm/w
 % load mesh% load mesh
-mesh = toastMesh('/Users/HKhanene/Documents/MATLAB/parser_test/breast_dim2_3.msh','gmsh');
+mesh = toastMesh('/Users/HKhanene/Documents/MATLAB/parser_test/breast_dim2_5.msh','gmsh');
 ne = mesh.ElementCount;
 nv = mesh.NodeCount;
 regidx = mesh.Region;
 regno = unique(regidx);
-%blobel = find(regidx == regno(2));
-% assuming that there is surface that marks the inclusion
 
-% define source and detector locations
+% define source 
 mm=1;
 if mm<9 
     Q(1,:)=[6 -27];
@@ -31,7 +35,7 @@ else
     Q(1,:)=[0 0];%[6 -27];
 end
 Q(2,:)=[60 0];
-%Q(4);
+%define detector locations
 d= sqrt((Q(1)-Q(2))^2 +(Q(3)-Q(4))^2);
 d1=[16.33 45];
 t1=d1(1)/d;%Let the ratio of distances, 
@@ -51,47 +55,56 @@ di= di+dis;
 end
 for yy=1:2
 mesh.SetQM(Q(yy,:),M);
-qvec = real(mesh.Qvec('Neumann','Gaussian',2));
-mvec = real(mesh.Mvec('Gaussian',2,refind));
+qvec = (mesh.Qvec('Neumann','Gaussian',2));
+mvec = (mesh.Mvec('Gaussian',2,refind));
 
 % assign elementwise optical coefficients - mus perturbation
 ref = ones(ne,1)*refind;
 mua = ones(ne,1)*mua_bkg;
 mus = ones(ne,1)*mus_bkg;
-%mus(blobel) = mus_bkg*2;
-for i=2:size(regno)
-blobs = find(regidx == regno(i));
-mua(blobs) =0.017; 
-%mus(blobs) =mus_bkg*2;
-end
-figure('position',[0,0,640,420]);
-subplot(2,2,1); mesh.Display(mua, 'range',[0.005,0.25]); axis off; title('\mu_a target');
-subplot(2,2,2); mesh.Display(mus, 'range',[0.8,2.2]);     axis off; title('\mu_s target');
-hold on
+% assign random mu perturbation
+% mua = (b-a).*rand(ne,1)+a;
+% mus = (b1-a1).*rand(ne,1)+a1;
+mua_ref=mua;
+mus_ref=mus;
 
+figure('position',[0,0,640,420]);
+subplot(2,2,1); mesh.Display(mua, 'range',[0.001,0.17]); axis off; title('\mu_a target');
+subplot(2,2,2); mesh.Display(mus, 'range',[0.8,2]);     axis off; title('\mu_s target');
+hold on
 plot(Q(:,1),Q(:,2),'ro','MarkerFaceColor','r');
 plot(M(:,1),M(:,2),'bs','MarkerFaceColor','m');
 
-% solve FEM linear system
-smat = dotSysmat(mesh, mua, mus, ref, 'EL');
-data(:,yy) = (mvec.' * (smat\qvec));
-%f=450000;
-% for reference, also solve the homogeneous problem
-mus = ones(ne,1)*mus_bkg;
-mua = ones(ne,1)*mua_bkg;
+
+% % for reference, also solve the homogeneous problem
 smat = dotSysmat(mesh, mua, mus, ref,f, 'EL');
-data_homog (:,yy)= (mvec.' * (smat\qvec));
-end
+data_homog (:,yy)= (mvec.' * bicgstab(smat,qvec,tol));
+
 toastWriteVector('Brest_homo.dat', data_homog);
+
+%insert lession assuming that there is surface that marks the inclusion
+for i=2:size(regno)
+blobs = find(regidx == regno(i));
+mua(blobs) =0.017; 
+mus(blobs) =1.1;
+end
+% solve FEM linear system
+smat = dotSysmat(mesh, mua, mus, ref,f, 'EL');
+data(:,yy) = (mvec.' * bicgstab(smat,qvec,tol));
+end
+
+
 toastWriteVector('Brest_hetero.dat', data);
 
-size (data)
-size (data_homog)
-ddiff= -data+data_homog;
+% ddiff= data-data_homog;
 figure;
-plot(real(ddiff));%, [-0.26,0.015]); axis equal tight;
- hold on
-plot(imag(ddiff));
+plot(real (data_homog));
+figure;
+plot(real (data));
+% hold on
+% plot(imag (data));
+%  hold on
+% plot(imag(ddiff));
 
 title('target data');
 
