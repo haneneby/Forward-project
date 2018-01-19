@@ -21,14 +21,15 @@ tol = 1e-6     % tolerance of bicgstab where the default is  1e-6.
 maxit= 20      % max number of iteration, default is min (n,20) where n is the size of vector b in bicgstab(A,b)
 f = cm/w
 % load mesh% load mesh
-mesh = toastMesh('/Users/HKhanene/Documents/MATLAB/parser_test/breast_dim2_5.msh','gmsh');
+mesh = toastMesh('/Users/HKhanene/Documents/MATLAB/parser_test/bRC/breast_dim2_10_0.msh','gmsh');
+display(mesh)
 ne = mesh.ElementCount;
 nv = mesh.NodeCount;
 regidx = mesh.Region;
 regno = unique(regidx);
 
 % define source 
-mm=1;
+mm=10;
 if mm<9 
     Q(1,:)=[6 -27];
 else
@@ -68,12 +69,6 @@ mus = ones(ne,1)*mus_bkg;
 mua_ref=mua;
 mus_ref=mus;
 
-figure('position',[0,0,640,420]);
-subplot(2,2,1); mesh.Display(mua, 'range',[0.001,0.17]); axis off; title('\mu_a target');
-subplot(2,2,2); mesh.Display(mus, 'range',[0.8,2]);     axis off; title('\mu_s target');
-hold on
-plot(Q(:,1),Q(:,2),'ro','MarkerFaceColor','r');
-plot(M(:,1),M(:,2),'bs','MarkerFaceColor','m');
 
 
 % % for reference, also solve the homogeneous problem
@@ -85,9 +80,16 @@ toastWriteVector('Brest_homo.dat', data_homog);
 %insert lession assuming that there is surface that marks the inclusion
 for i=2:size(regno)
 blobs = find(regidx == regno(i));
-mua(blobs) =0.017; 
-mus(blobs) =1.1;
+mua(blobs) =0.7; 
+mus(blobs) =1.5;
 end
+figure('position',[0,0,640,420]);
+subplot(2,2,1); mesh.Display(mua, 'range',[0.001,0.17]); axis off; title('\mu_a target');
+subplot(2,2,2); mesh.Display(mus, 'range',[0.8,2]);     axis off; title('\mu_s target');
+hold on
+plot(Q(:,1),Q(:,2),'ro','MarkerFaceColor','r');
+plot(M(:,1),M(:,2),'bs','MarkerFaceColor','m');
+
 % solve FEM linear system
 smat = dotSysmat(mesh, mua, mus, ref,f, 'EL');
 data(:,yy) = (mvec.' * bicgstab(smat,qvec,tol));

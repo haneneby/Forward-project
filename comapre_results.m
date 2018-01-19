@@ -20,9 +20,9 @@ ylabel('Intensity');
 %legend('Difference between medium  with random parameter w/without lession',...
 legend( ' Intensity measurement for tissue without lession', ' Intensity measurement for tissue with lession');
 figure;
- plot(real (data_LESION- data_homo));
- hold on
- plot(imag (data_LESION- data_homo));
+ plot((real (data_homo)-real(data_LESION))./real(data_homo));
+%  hold on
+%  plot(imag (data_homo-data_LESION)./imag(data_homo));
 
 xlabel('Detector index: S1 only then S2 only ');
 ylabel('Intensity');
