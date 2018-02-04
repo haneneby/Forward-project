@@ -21,7 +21,7 @@ tol = 1e-6     % tolerance of bicgstab where the default is  1e-6.
 maxit= 20      % max number of iteration, default is min (n,20) where n is the size of vector b in bicgstab(A,b)
 f = cm/w
 % load mesh% load mesh
-mesh = toastMesh('/Users/HKhanene/Documents/MATLAB/parser_test/bRC/breast_dim2_10_0.msh','gmsh');
+mesh = toastMesh('/Users/HKhanene/Documents/MATLAB/dataset/dataset_mesh/5.msh','gmsh');
 display(mesh)
 ne = mesh.ElementCount;
 nv = mesh.NodeCount;
@@ -56,7 +56,7 @@ di= di+dis;
 end
 for yy=1:2
 mesh.SetQM(Q(yy,:),M);
-qvec = (mesh.Qvec('Neumann','Gaussian',2));
+qvec = (mesh.Qvec('Neumann','Gaussian',3));
 mvec = (mesh.Mvec('Gaussian',2,refind));
 
 % assign elementwise optical coefficients - mus perturbation
@@ -101,6 +101,8 @@ toastWriteVector('Brest_hetero.dat', data);
 % ddiff= data-data_homog;
 figure;
 plot(real (data_homog));
+title('data_homog');
+
 figure;
 plot(real (data));
 % hold on

@@ -7,7 +7,7 @@ refind = 1.4;   % refractive index
 c0 = 0.3;       % speed of light in vacuum [mm/ps]
 cm = c0/refind; % speed of light in the medium [mm/ps]
 mua_bkg = 0.0033; % background absorption [1/mm]
-mus_bkg = 1.06;    % background scattering [1/mm];
+mus_bkg = 1.6;    % background scattering [1/mm];
 rad = 25;       % mesh radius [mm]
 itrmax = 100;   % CG iteration limit
 tolCG = 1e-6;   % convergence criterion
@@ -95,7 +95,9 @@ if(loop==0)
     results= cat(2,results,MESVEC);
     size(results)
  end
-
+% if k > 10
+%         break
+% end
 end
 csvwrite('/Users/HKhanene/Documents/MATLAB/parser_test/bcRC/RC.csv',full(results),0,0);
 
