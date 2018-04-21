@@ -1,6 +1,6 @@
 clear all
 close all
-mesh = toastMesh('/Users/HKhanene/Documents/MATLAB/dataset/dataset_mesh/260.msh','gmsh');
+mesh = toastMesh('/Users/HKhanene/Documents/MATLAB/dataset/dataset_mesh/60.msh','gmsh');
 mesh.Display
 ne = mesh.ElementCount;
 nv = mesh.NodeCount;
@@ -57,9 +57,12 @@ prm.basis.hBasis = toastBasis(mesh,[bx by],'Linear_v2');
 prm.bmua = prm.basis.hBasis.Map('M->B',mua)
 mat=reshape(prm.bmua,bx,by)
 mat= abs(mat')
+figure;
 h = imagesc((mat)); axis xy equal tight off % rot90
 max_image = max(abs(mat(:)))
 min_image = min(abs(mat(:)))
 
 % prm.bmus = prm.basis.hBasis.Map('M->B',mus);
 % axes(handles.axes1);
+
+
